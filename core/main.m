@@ -48,7 +48,7 @@ if size(img,3)==3
 end
 [~, img_name, ~] = fileparts(img_path);   
 
-O = imresize(img,[64 64],'bicubic');
+O = imresize(img,[32 32],'bicubic');
 O = imsharpen(O, 'Radius', 1, 'Amount', 1.5);
 [sh, ~] = size(O);
 
@@ -109,3 +109,18 @@ end
 fig_name = sprintf('res_%s_%d.png', img_name, sh);
 saveas(gcf, fullfile(results_dir, fig_name));
 fprintf('Figure saved to: %s\n', fullfile(results_dir, fig_name));
+
+
+%% Export for U-Net super-resolution
+unet_dir = fullfile(proj_root, 'unet', 'inputs');
+if ~exist(unet_dir, 'dir')
+    mkdir(unet_dir);
+end
+
+O_star_norm = double(O_star) / 255;
+O_norm      = double(O) / 255;
+
+save(fullfile(unet_dir, sprintf('unet_input_%d.mat', sh)), ...
+    'O_star_norm', 'O_norm', '-v7');
+
+fprintf('Saved U-Net input: %s\n', fullfile(unet_dir, sprintf('unet_input_%d.mat', sh)));
