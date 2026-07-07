@@ -1,9 +1,9 @@
-% P
-% B
-% x
-% Q_pos
-% Q_neg
-% Q
+% P [Ph , Pw]
+% B [Ph , Pw] : plane
+% x [Ph , 1] : flattened version of B
+% Q_pos : readings for the projected pattern P
+% Q_neg : readings for the complementary pattern (1-P)
+% Q : Q_pos - Q_neg
 
 function Q = simulate_bucket_signal(P, B, noise_std)
 

@@ -18,9 +18,7 @@ function O = binary_to_gray(U,L)
     
             cols = (x-1)*4 + (1:4);
     
-            bits = [ ...
-                U(y,cols), ...
-                L(y,cols)];
+            bits = [ U(y,cols), L(y,cols)];
     
             value = uint8(0);
     

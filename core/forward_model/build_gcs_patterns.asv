@@ -1,4 +1,4 @@
-% generating gray-code sorted hadamard patterns (GCS+S)
+% generating gray-code ordered hadamard patterns (GCS+S)
 
 % P
 % Ny/Nx
@@ -20,7 +20,7 @@ function P = build_gcs_patterns(Ny, Nx, SR)
 
     H = hadamard(N);
 
-    % gray-code for every row  
+    % gray-code ordering 
     gray = bitxor((0:N-1)', floor((0:N-1)'/2));
 
     [~, order] = sort(gray);

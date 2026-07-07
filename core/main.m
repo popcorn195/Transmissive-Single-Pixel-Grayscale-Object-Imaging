@@ -74,8 +74,8 @@ for blk = 1:2
         bit_idx = (blk-1)*4 + off; 
         cols = off:4:W;
         plane = Bblk(:, cols); % Hhalf * Nx, one bit per pixel
-
         [Ph, Pw] = size(plane);
+        
         P = build_gcs_patterns(Ph, Pw, SR_per_bit(bit_idx));
         Q = simulate_bucket_signal(P, plane, 0);
         plane_star = recon_tval3(P, Q, Ph, Pw);

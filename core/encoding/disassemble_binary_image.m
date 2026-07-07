@@ -1,9 +1,10 @@
 % recovering upper/lower nibble matrices.
 
 % H,W
-% Ny,Nx
-% Bavg
-% B_pre
+% Ny,Nx : O height
+% Braw [ 4Ny * 4Nx ] : reconstructed binary image
+% Bavg : average of each duplicated row pair
+% B_pre : binary image after thresholding
 % U,L
 
 function [U,L] = disassemble_binary_image(Braw)

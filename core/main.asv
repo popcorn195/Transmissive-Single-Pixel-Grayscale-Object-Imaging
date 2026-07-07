@@ -41,13 +41,16 @@ addpath(genpath(fullfile(proj_root,'metrics')));
 addpath(genpath(fullfile(proj_root,'TVAL3')));
 
 % image
-img = imread(fullfile(proj_root,'data','images','cat.jpg'));
+img_path = fullfile(proj_root,'data','images','cat.jpg');
+img=imread(img_path);
 if size(img,3)==3
     img = rgb2gray(img);
 end
+[~, img_name, ~] = fileparts(img_path);   
+
 O = imresize(img,[64 64],'bicubic');
 O = imsharpen(O, 'Radius', 1, 'Amount', 1.5);
-[sh,sw]=size(0);
+[sh, ~] = size(O);
 
 
 % Encoding
@@ -69,12 +72,12 @@ for blk = 1:2
     % each nibble contains 4 bit-planes
     for off = 1:4
         bit_idx = (blk-1)*4 + off; 
-        cols = off:4:W; % bit-plane's columns only
+        cols = off:4:W;
         plane = Bblk(:, cols); % Hhalf * Nx, one bit per pixel
-
         [Ph, Pw] = size(plane);
+        
         P = build_gcs_patterns(Ph, Pw, SR_per_bit(bit_idx));
-        Q  = simulate_bucket_signal(P, plane, 0);
+        Q = simulate_bucket_signal(P, plane, 0);
         plane_star = recon_tval3(P, Q, Ph, Pw);
 
         B_star(rows, cols) = plane_star >= 0.5;
@@ -94,8 +97,8 @@ total_time=toc;
 % metrics
 evaluate_bitplane_accuracy(U, L, U_star, L_star);
 [psnr_val, ssim_val] = evaluate_metrics(O, O_star);
-display_comparison(O, O_star, psnr_val, ssim_val);
-print('Total time taken: %d', total_time);
+display_comparison(O, O_star, psnr_val, ssim_val, total_time);
+fprintf('Total time taken: %.2f seconds\n', total_time);
 
 % saving figure
 results_dir = fullfile(proj_root, 'results', 'figures');
@@ -103,5 +106,6 @@ if ~exist(results_dir, 'dir')
     mkdir(results_dir);
 end
 
-fig_name = sprintf('reconstruction_%s%d.png', datestr(now, 'yyyymmdd_HHMMSS'), sh);saveas(gcf, fullfile(results_dir, fig_name));
+fig_name = sprintf('res_%s_%d.png', img_name, sh);
+saveas(gcf, fullfile(results_dir, fig_name));
 fprintf('Figure saved to: %s\n', fullfile(results_dir, fig_name));
