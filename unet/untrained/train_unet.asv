@@ -13,7 +13,6 @@ import imageio
 import time
 
 
-start_cpu = time.process_time()
 
 # parameters
 sh = 64
@@ -102,15 +101,6 @@ O_hat_np = best_O_hat.copy()
 O_hat_np = O_hat_np - O_hat_np.min()
 O_hat_np = O_hat_np / (O_hat_np.max() + 1e-8)
 sio.savemat(output_path, {'O_hat': O_hat_np})
-
-
-
-
-time.sleep(2)
-end_cpu = time.process_time()
-print(f"Actual CPU time used: {end_cpu - start_cpu} seconds")
-
-
 
 # metrics: SSIM/PSNR of O_star vs O, and O_hat vs O
 ssim_star = ssim(O, O_star, data_range=1.0)

@@ -1,36 +1,23 @@
-% generating gray-code sorted hadamard patterns (GCS+S)
-
-% P
-% Ny/Nx
+% selected_rows
+% Ny, Nx : height/width of the plane 
 % SR
-% M
-% H
+
+% N
+% M : gray-code value for each index 0..N-1
 % gray
 
-function P = build_gcs_patterns(Ny, Nx, SR)
+function selected_rows = build_gcs_patterns(Ny, Nx, SR)
 
     N = Ny * Nx;
 
-    % hadamard requires power-of-two dimensions
     if abs(log2(N)-round(log2(N))) > eps
         error('Ny*Nx must be a power of two.');
     end
 
     M = round(SR * N);
-
-    H = hadamard(N);
-
-    % gray-code for every row  
     gray = bitxor((0:N-1)', floor((0:N-1)'/2));
-
     [~, order] = sort(gray);
-
-    H = H(order, :);
-
-    % select first M patterns
-    H = H(1:M, :);
-
-    % convert to binary illumination
-    P = (H + 1) / 2;
+    
+    selected_rows = order(1:M);
 
 end
