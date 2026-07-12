@@ -1,0 +1,130 @@
+import torch
+import torch.nn as nn
+import numpy as np
+import scipy.io as sio
+import matplotlib.pyplot as plt
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr
+from model import PhysicsUNet
+
+import os
+import imageio
+
+import time
+
+
+
+# parameters
+sh = 64
+img_name="lena512"
+lr = 1e-3
+num_iter = 5000
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+input_path  = f'unet/inputs/un_ip_{img_name}_{sh}.mat'
+output_path = f'unet/outputs/O_hat_{img_name}_{sh}.mat'
+print(f'Device: {device}')
+
+# loading data
+data   = sio.loadmat(input_path)
+O_star = data['O_star_norm'].astype(np.float32)   # CS reconstruction, e.g. 64x64
+O      = data['O_norm'].astype(np.float32)         # target, same size for now
+
+O_star_t = torch.tensor(O_star).unsqueeze(0).unsqueeze(0).to(device)
+O_t      = torch.tensor(O).unsqueeze(0).unsqueeze(0).to(device)
+
+# model
+model     = PhysicsUNet().to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, patience=200, factor=0.5)
+
+with torch.no_grad():
+    model.out.bias.fill_(float(O_star.mean()))
+    nn.init.xavier_normal_(model.out.weight, gain=0.1)
+
+# training loop
+print(f'Training for {num_iter} iterations...')
+
+loss_history = []
+best_loss    = float('inf')
+best_O_hat   = None
+
+patience  = 200
+counter   = 0
+min_delta = 1e-4
+
+os.makedirs('results/training_frames', exist_ok=True)
+frames = []
+
+for iteration in range(num_iter):
+    optimizer.zero_grad()
+    O_hat = model(O_star_t)
+
+    loss = torch.mean((O_hat - O_t) ** 2)
+
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    optimizer.step()
+    scheduler.step(loss.item())
+
+    loss_val = loss.item()
+    loss_history.append(loss_val)
+
+    if iteration % 50 == 0:
+        frame = O_hat.detach().squeeze().cpu().numpy()
+        frame = frame - frame.min()
+        frame = frame / (frame.max() + 1e-8)
+        frames.append(frame.copy())
+
+    if loss_val < best_loss - min_delta:
+        best_loss  = loss_val
+        best_O_hat = O_hat.detach().squeeze().cpu().numpy().copy()
+        counter    = 0
+    else:
+        counter += 1
+
+    if counter >= patience:
+        print(f'\nEarly stopping at iteration {iteration}')
+        break
+
+    if iteration % 200 == 0:
+        print(f'Iter {iteration:4d} | Loss: {loss_val:.6f} | '
+              f'LR: {optimizer.param_groups[0]["lr"]:.6f}')
+
+print(f'Best loss: {best_loss:.6f}')
+
+gif_frames = [(255 * f).astype(np.uint8) for f in frames]
+imageio.mimsave('results/unet_evolution.gif', gif_frames, duration=0.15)
+
+O_hat_np = best_O_hat.copy()
+O_hat_np = O_hat_np - O_hat_np.min()
+O_hat_np = O_hat_np / (O_hat_np.max() + 1e-8)
+sio.savemat(output_path, {'O_hat': O_hat_np})
+
+# metrics: SSIM/PSNR of O_star vs O, and O_hat vs O
+ssim_star = ssim(O, O_star, data_range=1.0)
+ssim_hat  = ssim(O, O_hat_np, data_range=1.0)
+psnr_star = psnr(O, O_star, data_range=1.0)
+psnr_hat  = psnr(O, O_hat_np, data_range=1.0)
+
+print(f'\n--- Metrics vs ground truth O ---')
+print(f'O_star : SSIM={ssim_star:.4f} | PSNR={psnr_star:.2f} dB')
+print(f'O_hat  : SSIM={ssim_hat:.4f} | PSNR={psnr_hat:.2f} dB')
+
+fig, axes = plt.subplots(1, 3, figsize=(11, 4))
+axes[0].imshow(O, cmap='gray')
+axes[0].set_title('O (target)')
+axes[0].axis('off')
+
+axes[1].imshow(O_star, cmap='gray')
+axes[1].set_title(f'O_star (CS)\nSSIM={ssim_star:.4f}  PSNR={psnr_star:.2f} dB')
+axes[1].axis('off')
+
+axes[2].imshow(O_hat_np, cmap='gray')
+axes[2].set_title(f'O_hat (U-Net)\nSSIM={ssim_hat:.4f}  PSNR={psnr_hat:.2f} dB')
+axes[2].axis('off')
+
+plt.tight_layout()
+plt.savefig(f'results/figures/unet_result_{sh}.png', dpi=150)
+plt.show()
