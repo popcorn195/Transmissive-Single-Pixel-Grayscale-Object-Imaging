@@ -79,7 +79,8 @@ It is applied as a refinement stage on top of the per-bitplane TVAL3 output to r
 
 <img width="938" height="418" alt="image" src="https://github.com/user-attachments/assets/6c444d14-6323-4293-b5eb-cdc5485e7194" />
 
-Requirements
+
+## Requirements
 ```bash
 pip install torch torchvision numpy scipy matplotlib scikit-image imageio
 ```
