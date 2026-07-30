@@ -87,8 +87,10 @@ pip install torch torchvision numpy scipy matplotlib scikit-image imageio
 
 ## Usage
 
-```matlab
-run core/main.m
+```bash
+# run in matlab
+core/main.m
+```
 
 ```bash
 # Python: U-Net refinement
