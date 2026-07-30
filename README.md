@@ -42,9 +42,16 @@ Physics-driven U-Net refinement  →  final reconstruction
 <img width="937" height="390" alt="image" src="https://github.com/user-attachments/assets/38524103-ef3f-4c9c-8ce6-a6342939f60d" />
 
 
+# Optimisation
+Used the following for decreasing manual and time overhead-
+- Saliency-based auto-cropping utility
+- Parallelisation for bit planes computation
+- Tiered TVAL3 convergence
+- Replaced Hadamard transform with Fast Walsh-Hadamard Transform (FWHT)
+
 
 ## Results
-Saliency mask
+Saliency mask <br>
 <img width="650" height="353" alt="image" src="https://github.com/user-attachments/assets/574a4895-93dc-40fa-8d65-d245a21fd397" />
 
 Grayscale to binary encoding
